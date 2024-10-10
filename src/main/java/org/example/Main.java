@@ -2,12 +2,11 @@ package org.example;
 
 public class Main {
     public static void main(String[] args) {
-        final var path = "C:\\Users\\piotr\\IdeaProjects\\graphs\\graph7.txt";
 
-        final var path2 = "graph7.txt";
+        final var path = "graph7.txt";
 
-        DifferentGraph g2;
-        g2 = new DifferentGraph(path2);
+        Graph g2;
+        g2 = new Graph(path);
 
         g2.AlgorithmCompleteRoots();
 

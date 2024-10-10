@@ -5,54 +5,43 @@ import java.io.FileNotFoundException;
 import java.util.*;
 
 
-public class DifferentGraph{
+public class Graph {
     int verticesNumber;
     ArrayList<Integer> activeVertices;
     ArrayList<ArrayList<Integer>> neighborhoods;
     ArrayList<ArrayList<Integer>> activeNeighborhoods;
 
-    static int[] odwiedzone;
+    static int[] visitedVertices;
 
     static int counter = -1;
 
 
-    public DifferentGraph(){
+    public Graph(){
         verticesNumber = 0;
         activeNeighborhoods = new ArrayList<>();
         neighborhoods = new ArrayList<>();
         activeVertices = new ArrayList<>();
     }
-    public DifferentGraph(String path) {
+    public Graph(String path) {
         File file = new File(path);
-
-
         //to input a graph you have to put neighbors lists into graph.txt
-
         try {
-
             Scanner myReader = new Scanner(file);
-
             //counting number of vertices
             int VertNum = 0;
-            while(myReader.hasNextLine()){
+            while (myReader.hasNextLine()) {
                 VertNum++;
                 myReader.nextLine();
             }
             verticesNumber = VertNum;
             myReader.close();
-
             activeVertices = new ArrayList<>();
-
-            for (int x=0;x<verticesNumber;x++)
+            for (int x = 0; x < verticesNumber; x++)
                 activeVertices.add(x);
-
             //making neighborhood lists
             neighborhoods = new ArrayList<>();
             activeNeighborhoods = new ArrayList<>();
-
             myReader = new Scanner(file);
-
-
             while(myReader.hasNextLine()){
 
                 var data = myReader.nextLine().split(" ");
@@ -65,10 +54,8 @@ public class DifferentGraph{
                 neighborhoods.add(neighborhood);
                 activeNeighborhoods.add(neighborhood);
                 //next vertex
-
             }
             myReader.close();
-
 
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
@@ -92,8 +79,8 @@ public class DifferentGraph{
         }
     }
 
-    DifferentGraph copy(){
-        DifferentGraph g2 = new DifferentGraph();
+    Graph copy(){
+        Graph g2 = new Graph();
         g2.activeVertices.addAll(this.activeVertices);
         g2.neighborhoods.addAll(this.neighborhoods);
         g2.activeNeighborhoods.addAll(this.activeNeighborhoods);
@@ -106,6 +93,7 @@ public class DifferentGraph{
         return help.stream().filter(i -> this.activeVertices.contains(i)).toList().size();
     }
 
+    //debug function
     void printParams(){
         System.out.println("active vertices: "+this.activeVertices);
         System.out.println("neighborhoods: "+this.neighborhoods);
@@ -116,8 +104,8 @@ public class DifferentGraph{
         this.activeVertices.remove((Object)x);
     }
 
-    DifferentGraph cutLeaves(){
-        DifferentGraph result = this.copy();
+    Graph cutLeaves(){
+        Graph result = this.copy();
         ArrayList<Integer> inactiveVertices = new ArrayList<>();
 
         //checking which vertex to cut
@@ -137,7 +125,7 @@ public class DifferentGraph{
     }
 
     String findCentre(){
-        DifferentGraph g = this.copy();
+        Graph g = this.copy();
         while(g.activeVertices.size()>2)
             g=g.cutLeaves();
 
@@ -148,7 +136,7 @@ public class DifferentGraph{
     }
 
     int height(){
-        DifferentGraph g = this.copy();
+        Graph g = this.copy();
         int height = 0;
         while (g.activeVertices.size()>2){
             height++;
@@ -158,19 +146,19 @@ public class DifferentGraph{
     }
 
     void resetDFS(){
-        odwiedzone = new int[this.verticesNumber];
+        visitedVertices = new int[this.verticesNumber];
         for(int x=0;x<this.verticesNumber;x++)
-            odwiedzone[x] = -1;
+            visitedVertices[x] = -1;
         counter=0;
 
     }
     void DFS(int start){
 
-        odwiedzone[start]=counter;
+        visitedVertices[start]=counter;
 
         var help = this.neighborhoods.get(start);
         for(int vertex : help.stream().filter(i -> this.activeVertices.contains(i)).toList()){
-            if(odwiedzone[vertex]==-1)
+            if(visitedVertices[vertex]==-1)
             {
                 DFS(vertex);
                 //counter++;
@@ -178,11 +166,11 @@ public class DifferentGraph{
         }
     }
 
-    boolean checkSpojnosc(){
+    boolean checkConnectivity(){
         this.resetDFS();
         this.DFS(0);
         for(int x=0;x<this.verticesNumber;x++)
-            if(odwiedzone[x]!=0)
+            if(visitedVertices[x]!=0)
                 return false;
         return true;
     }
@@ -190,25 +178,25 @@ public class DifferentGraph{
     int numberOfComponents(){
         this.resetDFS();
         for(int x=0;x<this.verticesNumber;x++)
-            if(odwiedzone[x]==-1 & this.activeVertices.contains((Object)x)) {
+            if(visitedVertices[x]==-1 & this.activeVertices.contains((Object)x)) {
                 this.DFS(x);
                 counter++;
             }
-        return Arrays.stream(odwiedzone).max().getAsInt()+1;
+        return Arrays.stream(visitedVertices).max().getAsInt()+1;
     }
 
     void deactivateAll(){
         this.activeVertices.clear();
     }
 
-
-    DifferentGraph[] split(){
-        DifferentGraph[] components = new DifferentGraph[this.numberOfComponents()];
+    Graph[] split(){
+        //split graph into two or more if it is not connected
+        Graph[] components = new Graph[this.numberOfComponents()];
         for(int x=0;x<this.numberOfComponents();x++) {
             components[x] = this.copy();
             components[x].deactivateAll();
             for(int y = 0;y<this.verticesNumber;y++){
-                if(odwiedzone[y]==x)
+                if(visitedVertices[y]==x)
                     components[x].activate(y);
             }
         }
@@ -216,8 +204,8 @@ public class DifferentGraph{
         return components;
     }
 
-    DifferentGraph normalizeLabels(){
-        DifferentGraph result = new DifferentGraph();
+    Graph normalizeLabels(){
+        Graph result = new Graph();
         //adding vertex
         for(int vertex : this.activeVertices){
             result.addVertex();
@@ -260,7 +248,7 @@ public class DifferentGraph{
         int[] labels = new int[this.verticesNumber];
         for(int x=0;x<this.verticesNumber;x++)
             labels[x] = this.height();
-        DifferentGraph help = this.copy();
+        Graph help = this.copy();
         while (help.activeVertices.size()>2){
             help=help.cutLeaves();
             for (int x=0;x<this.verticesNumber;x++)
@@ -271,6 +259,7 @@ public class DifferentGraph{
     }
 
     String encode(){
+        //tree encoding, needed for isomorphism
         int[] heights = this.getVerticesHeight();
         if(this.findCentre().contains("-")){
             heights[Integer.parseInt(this.findCentre().split("-")[0])]++;
@@ -320,7 +309,7 @@ public class DifferentGraph{
         return result;
     }
 
-    Boolean isIsomorphic(DifferentGraph g2){
+    Boolean isIsomorphic(Graph g2){
         if(this.verticesNumber!=g2.verticesNumber ||this.height()!=this.height() || this.findCentre().length()!=this.findCentre().length()||this.activeVertices.size()!=g2.activeVertices.size())
             return false;
 
@@ -333,75 +322,6 @@ public class DifferentGraph{
     void removeEdge(int a, int b){
         this.neighborhoods.get(b).remove((Object)a);
         this.neighborhoods.get(a).remove((Object)b);
-    }
-
-    DifferentGraph alghorithm(){
-        DifferentGraph help = new DifferentGraph(this);
-        int height = 0;
-        DifferentGraph help2 = new DifferentGraph(this);
-        DifferentGraph result = new DifferentGraph(this);
-        boolean stop = false;
-        while (true){
-            help = new DifferentGraph(this);
-            help2=help2.cutLeaves();
-
-            help.removeMultipleEdges(help2.activeVertices);
-//            for(int vertex : help2.activeVertices){
-//                help.deactivateVertex(vertex);
-//            }
-            for(DifferentGraph component : help.split()){
-                if(!help.split()[0].isIsomorphic(component) || height==this.verticesNumber) {
-                    //help.print();
-                    stop = true;
-                }
-            }
-//            if(!stop)
-//                height++;
-
-            if(stop)
-                break;
-            else
-                height++;
-        }
-
-        help = this.copy();
-        for(int x=0; x<height;x++)
-            result = result.cutLeaves();
-
-        return result;
-    }
-    
-    DifferentGraph alghorithmBackwards(){
-        DifferentGraph help;
-        int height = this.height();
-        DifferentGraph help2;
-        DifferentGraph result = new DifferentGraph(this);
-        boolean stop = false;
-        while (true){
-            help = new DifferentGraph(this);
-            help2 = new DifferentGraph(this);
-            for(int x=0;x<height;x++){
-                help2=help2.cutLeaves();
-            }
-            help.removeMultipleEdges(help2.activeVertices);
-
-            if(!help2.activeVertices.isEmpty() & help.split().length>1)
-            for(DifferentGraph component : help.split()){
-                if(!help.split()[0].isIsomorphic(component) || height==0) {
-                    //help.print();
-                    stop = true;
-                }
-            }
-            if(stop)
-                break;
-            height--;
-        }
-
-        help = this.copy();
-        for(int x=0; x<height+1;x++)
-            result = result.cutLeaves();
-
-        return result;
     }
 
 
@@ -417,7 +337,7 @@ public class DifferentGraph{
         }
     }
 
-    DifferentGraph(DifferentGraph g){
+    Graph(Graph g){
         this.activeVertices = new ArrayList<>();
         for(int vertex : g.activeVertices)
             this.activeVertices.add(vertex);
@@ -436,81 +356,16 @@ public class DifferentGraph{
         }
     }
 
-    DifferentGraph alghorithm2(){
-        if(this.findCentre().contains("-") & false){
-
-            return new DifferentGraph();
-        }
-        else {
-            DifferentGraph help = new DifferentGraph(this);;
-            int height = 0;
-            DifferentGraph help2 = new DifferentGraph(this);
-            DifferentGraph result = new DifferentGraph(this);
-            boolean stop = false;
-            boolean first_item = false;
-            boolean wszedlem = false;
-            int when = -1;
-            int number = 0;
-            while (true){
-                number=0;
-                help = new DifferentGraph(this);
-                wszedlem = false;
-                stop = false;
-
-                help2=help2.cutLeaves();
-                if(help2.activeVertices.size()==1)
-                    help.deactivateVertex(help2.activeVertices.get(0));
-                else
-                    help.removeMultipleEdges(help2.activeVertices);
-
-                if(!help2.activeVertices.isEmpty() & help.split().length>1)
-                    for(DifferentGraph component : help.split()){
-                        if((!help.split()[0].isIsomorphic(component) || height==this.height() || help.split().length==1)&when==-1) {
-                            //help.print();
-                            stop = true;
-                            wszedlem = true;
-                            break;
-                        }
-                        if(height>0&when==0&!help.split()[0].isIsomorphic(component)){
-                            stop = true;
-                            break;
-                        }
-                        if(height>0&when>0&help.split()[0].isIsomorphic(component)&number>0){
-                            stop = true;
-                            break;
-                        }
-                        number++;
-
-                    }
-                if(wszedlem==false) {
-                    first_item = true;
-                    if(when ==-1)
-                        when = height;
-                }
-                if((stop & first_item)|| height==this.height())
-                    break;
-                height++;
-            }
-
-            result = new DifferentGraph(this);
-            if(height!=this.height())
-                for(int x=0; x<height;x++)
-                    result = result.cutLeaves();
-
-            return result;
-        }
-    }
-
-    DifferentGraph alghorithmCorrect(){
+    Graph alghorithmCorrect(){
         if(this.findCentre().contains("-")){
-            DifferentGraph help;
+            Graph help;
             int height = this.height();
-            DifferentGraph help2;
-            DifferentGraph result = new DifferentGraph(this);
+            Graph help2;
+            Graph result = new Graph(this);
             boolean iso = true;
             while (true){
-                help = new DifferentGraph(this);
-                help2 = new DifferentGraph(this);
+                help = new Graph(this);
+                help2 = new Graph(this);
                 iso = true;
                 for(int x=0;x<height;x++){
                     help2=help2.cutLeaves();
@@ -518,7 +373,7 @@ public class DifferentGraph{
                 help.removeMultipleEdges(help2.activeVertices);
 
                 if(!help2.activeVertices.isEmpty() & help.split().length>1)
-                    for(DifferentGraph component : help.split()){
+                    for(Graph component : help.split()){
                         if(!help.split()[0].isIsomorphic(component) || height==0) {
                             //help.print();
                             iso = false;
@@ -536,14 +391,14 @@ public class DifferentGraph{
             return result;
         }
         else{
-            DifferentGraph help;
+            Graph help;
             int height = this.height();
-            DifferentGraph help2;
-            DifferentGraph result = new DifferentGraph(this);
+            Graph help2;
+            Graph result = new Graph(this);
             boolean iso = true;
             while (true){
-                help = new DifferentGraph(this);
-                help2 = new DifferentGraph(this);
+                help = new Graph(this);
+                help2 = new Graph(this);
                 iso = true;
                 for(int x=0;x<height-1;x++){
                     help2=help2.cutLeaves();
@@ -551,7 +406,7 @@ public class DifferentGraph{
                 help.removeMultipleEdges(help2.activeVertices);
 
                 if(!help2.activeVertices.isEmpty() & help.split().length>1)
-                    for(DifferentGraph component : help.split()){
+                    for(Graph component : help.split()){
                         if(!help.split()[0].isIsomorphic(component) || height==0) {
                             //help.print();
                             iso = false;
@@ -570,16 +425,16 @@ public class DifferentGraph{
         }
     }
 
-    public ArrayList<DifferentGraph> completeAlghorithm() {
-        DifferentGraph help = new DifferentGraph(this);
+    public ArrayList<Graph> completeAlghorithm() {
+        Graph help = new Graph(this);
         if(help.equals(help.alghorithmCorrect())) {
-            ArrayList<DifferentGraph> result = new ArrayList<>();
+            ArrayList<Graph> result = new ArrayList<>();
             result.add(help);
             return result;
         }
         else {
-            DifferentGraph g1 = new DifferentGraph(help.alghorithmCorrect());
-            DifferentGraph g2 = new DifferentGraph(help);
+            Graph g1 = new Graph(help.alghorithmCorrect());
+            Graph g2 = new Graph(help);
 
             for (int vertex : g1.activeVertices) {
                 for (int vertex2 : g1.activeVertices) {
@@ -588,14 +443,14 @@ public class DifferentGraph{
             }
             g2 = g2.split()[0];
 
-            ArrayList<DifferentGraph> factorization1 = g1.completeAlghorithm();
-            ArrayList<DifferentGraph> factorization2 = g2.completeAlghorithm();
-            ArrayList<DifferentGraph> result = new ArrayList<>();
-            for (DifferentGraph graph :
+            ArrayList<Graph> factorization1 = g1.completeAlghorithm();
+            ArrayList<Graph> factorization2 = g2.completeAlghorithm();
+            ArrayList<Graph> result = new ArrayList<>();
+            for (Graph graph :
                     factorization1) {
                 result.add(graph);
             }
-            for (DifferentGraph graph :
+            for (Graph graph :
                     factorization2) {
                 result.add(graph);
             }
@@ -607,7 +462,7 @@ public class DifferentGraph{
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DifferentGraph that = (DifferentGraph) o;
+        Graph that = (Graph) o;
         return verticesNumber == that.verticesNumber && Objects.equals(activeVertices, that.activeVertices) && Objects.equals(neighborhoods, that.neighborhoods) && Objects.equals(activeNeighborhoods, that.activeNeighborhoods);
     }
 
@@ -617,36 +472,15 @@ public class DifferentGraph{
     }
 
     void AlgorithmCompleteRoots(){
-//        DifferentGraph first_factor = new DifferentGraph(this.alghorithmCorrect());
-//        DifferentGraph second_factor = new DifferentGraph(this);
-//
-//        for (int vertex : first_factor.activeVertices) {
-//            for (int vertex2 : first_factor.activeVertices) {
-//                second_factor.removeEdge(vertex, vertex2);
-//            }
-//        }
-//        second_factor = second_factor.split()[0];
-//        int root =0;
-//        for (int vertex1 : first_factor.activeVertices) {
-//           if(second_factor.activeVertices.contains(vertex1)){
-//               root = vertex1;
-//               break;
-//           }
-//        }
-//        System.out.println("first factor");
-//        first_factor.print();
-//        System.out.println("second factor, root "+root);
-//        second_factor.print();
-
-        DifferentGraph first_factor = new DifferentGraph(this.alghorithmCorrect());
-        DifferentGraph second_factor = new DifferentGraph(this);
+        Graph first_factor = new Graph(this.alghorithmCorrect());
+        Graph second_factor = new Graph(this);
         for (int vertex : first_factor.activeVertices) {
             for (int vertex2 : first_factor.activeVertices) {
                 second_factor.removeEdge(vertex, vertex2);
             }
         }
         second_factor = second_factor.split()[0];
-        ArrayList<DifferentGraph> first_factors = new ArrayList<>();
+        ArrayList<Graph> first_factors = new ArrayList<>();
         first_factors.add(first_factor);
         ArrayList<Integer> roots = new ArrayList<>();
         int root=0;
@@ -660,13 +494,13 @@ public class DifferentGraph{
             }
             roots.add(root);
 
-            first_factor = new DifferentGraph(second_factor.alghorithmCorrect()) ;
+            first_factor = new Graph(second_factor.alghorithmCorrect()) ;
             for (int vertex : first_factor.activeVertices) {
                 for (int vertex2 : first_factor.activeVertices) {
                     second_factor.removeEdge(vertex, vertex2);
                 }
             }
-            second_factor=new DifferentGraph(second_factor.split()[0]);
+            second_factor=new Graph(second_factor.split()[0]);
             first_factors.add(first_factor);
         }
 
@@ -675,28 +509,28 @@ public class DifferentGraph{
             System.out.println("g"+i+": ");
             first_factors.get(i).print();
         }
-//        for (DifferentGraph g : first_factors){
-//            g.print();
-//            System.out.println();
+
+        //displaying roots, not implemented
+//        ArrayList<Integer> rootsBackwards = new ArrayList<>();
+//
+//        for (int i=roots.size()-1;i>-1;i--){
+//            rootsBackwards.add(roots.get(i));
 //        }
-        ArrayList<Integer> rootsBackwards = new ArrayList<>();
-
-        for (int i=roots.size()-1;i>-1;i--){
-            rootsBackwards.add(roots.get(i));
-        }
-
-        System.out.println("roots: "+rootsBackwards);
-
-        StringBuilder result = new StringBuilder("g0");
-
-        for(int i=1;i<first_factors.size();i++){
-            result.append("+");
-            if(i!=first_factors.size()-1)
-                result.append("(");
-            result.append("g").append(i);
-        }
-        for(int i=1;i<first_factors.size()-1;i++)
-            result.append(")");
-        System.out.println(result);
+//
+//        System.out.println("roots: "+rootsBackwards);
+//
+//        StringBuilder result = new StringBuilder("g0");
+//
+//        for(int i=1;i<first_factors.size();i++){
+//            result.append("+");
+//            if(i!=first_factors.size()-1)
+//                result.append("(");
+//            result.append("g").append(i);
+//        }
+//        for(int i=1;i<first_factors.size()-1;i++)
+//            result.append(")");
+//        System.out.println(result);
+//    }
     }
+
 }

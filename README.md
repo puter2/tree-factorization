@@ -1,0 +1,1 @@
+An implementation of alghorithm for factorization of trees in regards to h-product. Alghorithm was described in Wilfried Imrich, Rafal Kalinowski, Monika Pilsniak (2023) Hierarchical products of graphs.
